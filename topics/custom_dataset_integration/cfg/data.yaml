@@ -1,0 +1,22 @@
+path: /path/to/dataset/
+train:
+  - train/fire_scene/images
+  - train/similar_scene/images
+  - train/unrelated_scene/images
+val:
+  - val/fire_scene/images
+  - val/similar_scene/images
+  - val/unrelated_scene/images
+nc: 11
+names:
+  - black_smoke
+  - gray_smoke
+  - white_smoke
+  - flame
+  - cloud
+  - fog
+  - lamp_light
+  - sun_light
+  - shaky_object
+  - wind-swayed_leaves
+  - irrelevant

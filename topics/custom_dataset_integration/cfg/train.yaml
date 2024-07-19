@@ -1,0 +1,12 @@
+model:    yolov10s.pt
+project:  outputs/yolov10/s
+name:     v0
+
+epochs:   50
+imgsz:    640
+batch:    -1
+fliplr:   0.5
+
+device:   0
+
+data: data.yaml
