@@ -22,22 +22,21 @@ def get_common_path(paths):
 
 
 def convert_json_to_yolo(json_data, image_width, image_height):
-    # YOLO 형식 어노테이션을 저장할 리스트
+    # list of YOLO-formatted annotations
     yolo_annotations = []
 
     # 어노테이션 데이터 변환
     for annotation in json_data.get('annotations'):
-        class_id = int(annotation['class'])-1  # 클래스 ID (YOLO에서는 숫자로 사용됨)
+        class_id = int(annotation['class'])-1
         
         if 'box' in annotation:
-            # 경계 상자 좌표 추출
             x_min, y_min, x_max, y_max = annotation['box']
         elif 'polygon' in annotation:
             x_min, y_min, x_max, y_max = segment2boxcoords(annotation['polygon'])
         else:
             raise ValueError(json_data['image']['filename'] + ": Annotation must contain either 'box' or 'polygon'")
         
-        # 중심 좌표와 너비 및 높이 계산
+        # xyxy2xywh
         x_center = (x_min + x_max) / 2.0 / image_width
         y_center = (y_min + y_max) / 2.0 / image_height
         width = (x_max - x_min) / image_width
@@ -52,16 +51,33 @@ def convert_json_to_yolo(json_data, image_width, image_height):
 
 def segment2boxcoords(seg):
     """
-    A function that calculates and returns x_min, y_min, x_max, and y_max from a given list of coordinates.
-
+    extract bounding box coordinates as [x_min, y_min, x_max, y_max] from polygon-shaped coords
+    
     Parameters:
-    seg (list): A list of coordinates in the form [x, y]
-
+    seg (list): list of list [x, y]
+    
     Returns:
     list: [x_min, y_min, x_max, y_max]
+    
     """
 
-    coords = np.array(seg)
+    def filter_coordinates(lst):
+        """
+        Filters a list to only include elements that are [x, y] coordinates.
+
+        Parameters:
+        lst (list): A list that may contain various elements.
+
+        Returns:
+        list: A new list with only [x, y] coordinate elements.
+        """
+        return [item for item in lst if isinstance(item, list) and len(item) == 2 and all(isinstance(i, (int, float)) for i in item)]
+    
+    try:
+        coords = np.array(seg)
+    except ValueError:
+        coords = np.array(filter_coordinates(seg))
+
     x, y = coords.T  # 좌표 리스트를 x, y로 분리
     x_min = x.min()
     y_min = y.min()
