@@ -1,3 +1,6 @@
 [submodule "ultralytics"]
 	path = ultralytics
 	url = https://github.com/ultralytics/ultralytics.git
+[submodule "topics/sahi-onnx/sahi"]
+	path = topics/sahi-onnx/sahi
+	url = git@github.com:obss/sahi.git
