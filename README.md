@@ -6,7 +6,7 @@ The work in this repository requires the [Ultralytics](ultralytics) package. Add
 
 ## Installation
 
-All the examples in this repository were implemented in a Python 3.12.4 environment with [Ultralytics](https://github.com/ultralytics/ultralytics) included. Additionally, newly created modules are packaged under the name `myultralytics` and can be installed using the following command:
+All the examples in this repository were implemented in a **Python 3.12.4** environment with [**Ultralytics**](ultralytics) included. Additionally, newly created modules are packaged under the name `myultralytics` and can be installed using the following command:
 
 ```bash
 path/to/this/repo$ pip install -e .
