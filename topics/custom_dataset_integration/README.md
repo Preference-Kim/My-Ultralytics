@@ -1,6 +1,6 @@
 # Custom Dataset Integration
 
-- *Last Updated: July 19, 2024*
+- *Last Updated: Aug. 23, 2024*
 
 ## Introduction
 
@@ -129,7 +129,8 @@ The annotation files are in `.json` format, with each image having its own file.
 Training can be conducted in a Python environment with Ultralytics installed by running the following command:
 
 ```bash
-    path/to/this/repo$ python -m topics.custom_dataset_integration.train
+    path/to/this/repo$ export PIN_MEMORY=False # Optional
+    path/to/this/repo$ python topics/custom_dataset_integration/train.py
 ```
 
 The relevant code is stored in [`topics/custom_dataset_integration/trainer`](topics/custom_dataset_integration/trainer).

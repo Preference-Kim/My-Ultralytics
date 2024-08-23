@@ -22,27 +22,28 @@ def get_common_path(paths):
 
 
 def convert_json_to_yolo(json_data, image_width, image_height):
-    # list of YOLO-formatted annotations
+    # List to store YOLO format annotations
     yolo_annotations = []
 
-    # 어노테이션 데이터 변환
+    # Convert annotation data
     for annotation in json_data.get('annotations'):
-        class_id = int(annotation['class'])-1
-        
+        class_id = int(annotation['class']) - 1  # Class ID (YOLO uses numbers)
+
         if 'box' in annotation:
+            # Extract bounding box coordinates
             x_min, y_min, x_max, y_max = annotation['box']
         elif 'polygon' in annotation:
             x_min, y_min, x_max, y_max = segment2boxcoords(annotation['polygon'])
         else:
             raise ValueError(json_data['image']['filename'] + ": Annotation must contain either 'box' or 'polygon'")
         
-        # xyxy2xywh
+        # Calculate center coordinates and width & height
         x_center = (x_min + x_max) / 2.0 / image_width
         y_center = (y_min + y_max) / 2.0 / image_height
         width = (x_max - x_min) / image_width
         height = (y_max - y_min) / image_height
 
-        # YOLO 형식으로 변환
+        # Convert to YOLO format
         yolo_annotation = [class_id, x_center, y_center, width, height]
         yolo_annotations.append(yolo_annotation)
 
@@ -51,14 +52,13 @@ def convert_json_to_yolo(json_data, image_width, image_height):
 
 def segment2boxcoords(seg):
     """
-    extract bounding box coordinates as [x_min, y_min, x_max, y_max] from polygon-shaped coords
+    A function that calculates and returns x_min, y_min, x_max, y_max from a given list of coordinates.
     
     Parameters:
-    seg (list): list of list [x, y]
+    seg (list): A list of coordinates in the form [x, y].
     
     Returns:
     list: [x_min, y_min, x_max, y_max]
-    
     """
 
     def filter_coordinates(lst):
@@ -78,7 +78,7 @@ def segment2boxcoords(seg):
     except ValueError:
         coords = np.array(filter_coordinates(seg))
 
-    x, y = coords.T  # 좌표 리스트를 x, y로 분리
+    x, y = coords.T  # Separate the list of coordinates into x and y
     x_min = x.min()
     y_min = y.min()
     x_max = x.max()
@@ -119,7 +119,7 @@ def verify_image_label_json(args):
                     json_data = json.load(f)
                 with open(lb_file, 'w', encoding='utf-8') as file:
                     json.dump(json_data, file, ensure_ascii=False, indent=4)
-            
+
             # Get image resolution
             image_width, image_height = json_data['image']['resolution']
 

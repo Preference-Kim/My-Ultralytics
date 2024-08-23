@@ -21,12 +21,20 @@ DATASET_CACHE_VERSION = "1.0.3"
 
 class JSONDataset(YOLODataset):
     
+    def __init__(self, *args, is_train=True, **kwargs):
+        self.is_train = is_train
+        super().__init__(*args, **kwargs)
+    
     def get_labels(self):
         """Revised to be compatible for json format labels"""
         """Returns dictionary of labels for YOLO training."""
         self.label_files = data_utils.img2jsonlabel_paths(self.im_files)
+
+        if cached_files := self.data.get('cache_path'):
+            cache_path = Path(cached_files[int(not self.is_train)])
+        else:
+            cache_path = data_utils.get_common_path(self.label_files) / 'labels.cache'
         
-        cache_path = data_utils.get_common_path(self.label_files) / 'labels.cache'
         try:
             cache, exists = load_dataset_cache_file(cache_path), True  # attempt to load a *.cache file
             assert cache["version"] == DATASET_CACHE_VERSION  # matches current version
@@ -150,4 +158,5 @@ def build_json_dataset(cfg, img_path, batch, data, mode="train", rect=False, str
         classes=cfg.classes,
         data=data,
         fraction=cfg.fraction if mode == "train" else 1.0,
+        is_train=mode == "train",
     )
