@@ -2,11 +2,37 @@ model:    yolov10s.pt
 project:  outputs/yolov10/s
 name:     v0
 
+exist_ok: True
+
 epochs:   50
 imgsz:    640
-batch:    -1
-fliplr:   0.5
+batch:    512   # 0.8, multiply the number of GPUs to be used
 
-device:   0
+hsv_h:    0.002 # hue
+hsv_s:    0.2   # saturation
+hsv_v:    0.4   # brightness
+
+fliplr:   0.5
+erasing:  0.1
+mosaic:   0.2
+close_mosaic: 10
+
+# Freezing
+freeze: 10
+
+# Loss
+box:      7.5   # 7.5
+cls:      1.0   # 0.5
+dfl:      1.5   # 1.5
+
+# Processor configs
+device:
+  - 0
+  - 1   
+  - 2
+  - 3
+workers: 16
+
+plots: True
 
 data: data.yaml

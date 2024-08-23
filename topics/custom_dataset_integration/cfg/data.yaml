@@ -7,6 +7,11 @@ val:
   - val/fire_scene/images
   - val/similar_scene/images
   - val/unrelated_scene/images
+
+cache_path:
+  - /path/to/cache/for/training.cache   # train
+  - /path/to/cache/for/validation.cache # val
+
 nc: 11
 names:
   - black_smoke
