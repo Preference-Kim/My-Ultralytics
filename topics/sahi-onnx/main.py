@@ -150,7 +150,7 @@ class YOLOFireOnnx(MyModel):
         return self.model.run(None, {'images': batch})[0]
 
 
-    def postprocess(self, original_img:np.ndarray, prediction_result:np.ndarray, confidence_thres:float=0.05, iou_thres:float=0.5) -> np.ndarray:
+    def postprocess(self, original_img:np.ndarray, prediction_result:np.ndarray, confidence_thres:float=0.05, iou_thres:float=0.5, show_scores=True) -> np.ndarray:
         """
         Performs post-processing on the model's output to extract bounding boxes, scores, and class IDs.
 
@@ -214,7 +214,7 @@ class YOLOFireOnnx(MyModel):
             class_id = class_ids[i]
 
             # Draw the detection on the input image
-            self.draw_detections(original_img, box, score, class_id)
+            self.draw_detections(original_img, box, score, class_id, show_scores)
 
         # Return the modified input image
         return original_img
@@ -261,7 +261,7 @@ class YOLOFireOnnx(MyModel):
     """ ============== POST-PROCESSING UTILS ============== """
     
     
-    def draw_detections(self, img:np.ndarray, box, score, class_id) -> None:
+    def draw_detections(self, img:np.ndarray, box, score, class_id, show_scores=True) -> None:
         """
         Draws bounding boxes and labels on the input image based on the detected objects.
 
@@ -290,7 +290,7 @@ class YOLOFireOnnx(MyModel):
         cv2.rectangle(img, (int(x1), int(y1)), (int(x1 + w), int(y1 + h)), color, 2)
 
         # Create the label text with class name and score
-        label = f"{class_name}: {score:.2f}"
+        label = f"{class_name}: {score:.2f}" if show_scores else class_name
 
         # Calculate the dimensions of the label text
         (label_width, label_height), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
@@ -311,7 +311,7 @@ class YOLOFireOnnx(MyModel):
 """ ============== MAIN ============== """
 
 
-if __name__=='__main__':
+def main_image():
     
     model = None
     
@@ -331,3 +331,46 @@ if __name__=='__main__':
     result_image = model.postprocess(original_img=im, prediction_result=batch_results, confidence_thres=0.05, iou_thres=0.5)
 
     cv2.imwrite(working_dir / 'main_result.jpg', result_image)
+    return
+
+
+if __name__ == '__main__':
+    # Define the paths
+    working_dir = Path(__file__).parent
+    vid_path = working_dir / 'samples/sample1.mp4'
+    onnx_weight = working_dir / 'models/yolov10n.onnx'
+
+    # Initialize video capture and writer
+    cap = cv2.VideoCapture(str(vid_path))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # Codec for .mp4 format
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    output_path = vid_path.with_stem('sample1_output')
+    out = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
+
+    # Initialize model
+    ret, im = cap.read()
+    config = YOLOConfig(weight_path=onnx_weight)
+    my_model = YOLOFireOnnx(model_config=config, resolution=im.shape[:2])
+    model = my_model.load_model()
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        # Process each frame
+        batch = model.preprocess(frame)
+        batch_results = model.predict(batch)
+        result_frame = model.postprocess(original_img=frame, prediction_result=batch_results, confidence_thres=0.05, iou_thres=0.2, show_scores=False)
+        
+        # Write the result frame to the output video
+        out.write(result_frame)
+
+    # Release resources
+    cap.release()
+    out.release()
+    cv2.destroyAllWindows()
+
+    print(f"Processed video saved at {output_path}")

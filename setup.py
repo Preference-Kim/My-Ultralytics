@@ -8,7 +8,6 @@ setup(
     package_dir={'': 'myultralytics'},
     install_requires=[
         "ultralytics",
-        "onnxruntime",
     ],
     python_requires=">=3.12.4",
 )
