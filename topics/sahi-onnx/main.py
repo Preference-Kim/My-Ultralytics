@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Union, Optional, List, Tuple
 from pathlib import Path
+import argparse
 
 import numpy as np
 import cv2
@@ -150,7 +151,7 @@ class YOLOFireOnnx(MyModel):
         return self.model.run(None, {'images': batch})[0]
 
 
-    def postprocess(self, original_img:np.ndarray, prediction_result:np.ndarray, confidence_thres:float=0.05, iou_thres:float=0.5, show_scores=True) -> np.ndarray:
+    def postprocess(self, original_img:np.ndarray, prediction_result:np.ndarray, confidence_thres:float=0.05, iou_thres:float=0.5, show_scores=True, do_NMS=True) -> np.ndarray:
         """
         Performs post-processing on the model's output to extract bounding boxes, scores, and class IDs.
 
@@ -203,7 +204,7 @@ class YOLOFireOnnx(MyModel):
                     boxes.append([left, top, width, height])
 
         # Apply non-maximum suppression to filter out overlapping bounding boxes
-        indices = cv2.dnn.NMSBoxes(boxes, scores, confidence_thres, iou_thres)
+        indices = cv2.dnn.NMSBoxes(boxes, scores, confidence_thres, iou_thres) if do_NMS else range(len(boxes))
 
 
         # Iterate over the selected indices after non-maximum suppression
@@ -334,11 +335,28 @@ def main_image():
     return
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Process video using a YOLO ONNX model.")
+    parser.add_argument('--vid_path', type=Path, required=True, help="Path to the input video file.")
+    parser.add_argument('--onnx_weight', type=Path, required=True, help="Path to the ONNX model weight file.")
+    parser.add_argument('--nms', type=bool, default=True)
+    parser.add_argument('--conf', type=float, default=0.05)
+    parser.add_argument('--suffix', type=str, default='output')
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
-    # Define the paths
-    working_dir = Path(__file__).parent
-    vid_path = working_dir / 'samples/sample1.mp4'
-    onnx_weight = working_dir / 'models/yolov10n.onnx'
+    # Parse command-line arguments
+    args = parse_args()
+    
+    vid_path = args.vid_path
+    onnx_weight = args.onnx_weight
+    nms = args.nms
+    conf = args.conf
+    suffix = args.suffix
+
+    # Initialize output path by adding '_output' to the stem of vid_path
+    output_path = vid_path.with_stem(vid_path.stem + '_' + suffix)
 
     # Initialize video capture and writer
     cap = cv2.VideoCapture(str(vid_path))
@@ -346,7 +364,6 @@ if __name__ == '__main__':
     fps = cap.get(cv2.CAP_PROP_FPS)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    output_path = vid_path.with_stem('sample1_output')
     out = cv2.VideoWriter(str(output_path), fourcc, fps, (width, height))
 
     # Initialize model
@@ -363,7 +380,7 @@ if __name__ == '__main__':
         # Process each frame
         batch = model.preprocess(frame)
         batch_results = model.predict(batch)
-        result_frame = model.postprocess(original_img=frame, prediction_result=batch_results, confidence_thres=0.05, iou_thres=0.2, show_scores=False)
+        result_frame = model.postprocess(original_img=frame, prediction_result=batch_results, confidence_thres=conf, iou_thres=0.2, show_scores=False, do_NMS=nms)
         
         # Write the result frame to the output video
         out.write(result_frame)
